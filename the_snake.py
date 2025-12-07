@@ -1,169 +1,207 @@
-"""Snake Game - классическая игра змейка."""
-import random
-import sys
+from random import randint
+
 import pygame
 
+# Константы для размеров поля и сетки:
+SCREEN_WIDTH, SCREEN_HEIGHT = 640, 480
+GRID_SIZE = 20
+GRID_WIDTH = SCREEN_WIDTH // GRID_SIZE
+GRID_HEIGHT = SCREEN_HEIGHT // GRID_SIZE
 
-# Инициализация Pygame
-pygame.init()
+# Направления движения:
+UP = (0, -1)
+DOWN = (0, 1)
+LEFT = (-1, 0)
+RIGHT = (1, 0)
 
-# Параметры экрана
-WIDTH, HEIGHT = 600, 400
-BLOCK_SIZE = 20
-FPS = 60
+# Цвет фона - черный:
+BOARD_BACKGROUND_COLOR = (0, 0, 0)
 
-# Цвета
-WHITE = (255, 255, 255)
-BLACK = (0, 0, 0)
-RED = (255, 0, 0)
-GREEN = (0, 255, 0)
-BLUE = (0, 0, 255)
+# Цвет границы ячейки
+BORDER_COLOR = (93, 216, 228)
 
-# Настройка экрана
-screen = pygame.display.set_mode((WIDTH, HEIGHT))
-pygame.display.set_caption('Snake Game')
+# Цвет яблока
+APPLE_COLOR = (255, 0, 0)
+
+# Цвет змейки
+SNAKE_COLOR = (0, 255, 0)
+
+# Скорость движения змейки:
+SPEED = 20
+
+# Настройка игрового окна:
+screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), 0, 32)
+
+# Заголовок окна игрового поля:
+pygame.display.set_caption('Змейка')
+
+# Настройка времени:
 clock = pygame.time.Clock()
 
-# Шрифты
-font = pygame.font.SysFont(None, 36)
-small_font = pygame.font.SysFont(None, 24)
 
-# Игровые переменные
-snake = [(WIDTH // 2, HEIGHT // 2)]
-direction = 'RIGHT'
-score = 0
-game_over = False
-speed = 10
+# Тут опишите все классы игры.
+class GameObject:
+    """Это докстриг"""
 
+    def __init__(self, body_color: tuple = (255, 0, 0),
+                 position: tuple = ((SCREEN_WIDTH // 2), (SCREEN_HEIGHT // 2))
+                 ):
+        self.position = position
+        self.body_color = body_color
 
-def generate_food():
-    """Генерация случайной позиции для еды."""
-    while True:
-        x = random.randrange(0, WIDTH - BLOCK_SIZE, BLOCK_SIZE)
-        y = random.randrange(0, HEIGHT - BLOCK_SIZE, BLOCK_SIZE)
-        if (x, y) not in snake:
-            return x, y
+    def draw(self):
+        """Это докстриг"""
+        pass
 
 
-def handle_direction_key(event_key, current_direction):
-    """Обработка клавиш направления."""
-    key_mappings = {
-        pygame.K_LEFT: ('LEFT', 'RIGHT'),
-        pygame.K_RIGHT: ('RIGHT', 'LEFT'),
-        pygame.K_UP: ('UP', 'DOWN'),
-        pygame.K_DOWN: ('DOWN', 'UP'),
-        pygame.K_a: ('LEFT', 'RIGHT'),
-        pygame.K_d: ('RIGHT', 'LEFT'),
-        pygame.K_w: ('UP', 'DOWN'),
-        pygame.K_s: ('DOWN', 'UP'),
-    }
-    if event_key in key_mappings:
-        new_dir, opposite_dir = key_mappings[event_key]
-        if current_direction != opposite_dir:
-            return new_dir
-    return current_direction
+class Apple(GameObject):
+    """Это докстриг"""
+
+    def __init__(self, body_color=(255, 0, 0),
+                 position=((SCREEN_WIDTH // 2), (SCREEN_HEIGHT // 2))):
+        super().__init__(body_color=(255, 0, 0),
+                         position=((SCREEN_WIDTH // 2), (SCREEN_HEIGHT // 2)))
+        self.body_color = (255, 0, 0)
+        self.position = self.randomize_position()
+
+    def randomize_position(self):
+        """Это докстриг"""
+        x = randint(0, GRID_WIDTH - 1) * GRID_SIZE
+        y = randint(0, GRID_HEIGHT - 1) * GRID_SIZE
+        position = (x, y)
+
+        self.position = position
+
+        return position
+
+    # Метод draw класса Apple
+    def draw(self):
+        """Это докстриг"""
+        rect = pygame.Rect(self.position, (GRID_SIZE, GRID_SIZE))
+        pygame.draw.rect(screen, self.body_color, rect)
+        pygame.draw.rect(screen, BORDER_COLOR, rect, 1)
 
 
-def handle_keydown(event, current_game_over):
-    """Обработка нажатий клавиш."""
-    if current_game_over:
-        if event.key == pygame.K_SPACE:
-            new_snake = [(WIDTH // 2, HEIGHT // 2)]
-            new_direction = 'RIGHT'
-            new_score = 0
-            new_food = generate_food()
-            new_speed = 10
-            return new_snake, new_direction, new_score, new_food, new_speed, False
-        return snake, direction, score, food, speed, current_game_over
-    new_direction = handle_direction_key(event.key, direction)
-    return snake, new_direction, score, food, speed, current_game_over
+class Snake(GameObject):
+    """Это докстриг"""
 
+    def __init__(self, position=(0, 0), length: int = 1,
+                 positions: list[tuple] = [(0, 0)],
+                 direction: tuple = RIGHT, next_direction: tuple = None,
+                 body_color=(0, 255, 0)):
+        super().__init__(body_color, position)
+        self.length = length
+        self.positions = positions
+        self.direction = direction
+        self.next_direction = next_direction
+        self.last = self.positions[-1]
 
-def move_snake(current_snake, current_direction, current_game_over):
-    """Движение змейки."""
-    if current_game_over:
-        return current_snake, current_game_over
-    head_x, head_y = current_snake[0]
-    if current_direction == 'LEFT':
-        head_x -= BLOCK_SIZE
-    elif current_direction == 'RIGHT':
-        head_x += BLOCK_SIZE
-    elif current_direction == 'UP':
-        head_y -= BLOCK_SIZE
-    elif current_direction == 'DOWN':
-        head_y += BLOCK_SIZE
-    new_head = (head_x, head_y)
-    if (head_x < 0 or head_x >= WIDTH or head_y < 0 or
-            head_y >= HEIGHT or new_head in current_snake):
-        current_game_over = True
-    if not current_game_over:
-        current_snake.insert(0, new_head)
-    return current_snake, current_game_over
+    def update_direction(self):
+        """Это докстриг"""
+        if self.next_direction:
+            self.direction = self.next_direction
+            self.next_direction = None
 
+    def move(self):
+        """Это докстриг"""
+        head = self.get_head_position()
 
-def draw_game():
-    """Отрисовка всех элементов игры."""
-    screen.fill(BLACK)
-    for x in range(0, WIDTH, BLOCK_SIZE):
-        pygame.draw.line(screen, (40, 40, 40), (x, 0), (x, HEIGHT))
-    for y in range(0, HEIGHT, BLOCK_SIZE):
-        pygame.draw.line(screen, (40, 40, 40), (0, y), (WIDTH, y))
-    for i, (x, y) in enumerate(snake):
-        color = GREEN if i == 0 else BLUE
-        pygame.draw.rect(screen, color, (x, y, BLOCK_SIZE, BLOCK_SIZE))
-        pygame.draw.rect(screen, WHITE, (x, y, BLOCK_SIZE, BLOCK_SIZE), 1)
-    pygame.draw.rect(screen, RED, (food[0], food[1], BLOCK_SIZE, BLOCK_SIZE))
-    pygame.draw.circle(
-        screen,
-        (200, 0, 0),
-        (food[0] + BLOCK_SIZE // 2, food[1] + BLOCK_SIZE // 2),
-        BLOCK_SIZE // 2,
-    )
-    score_msg = 'Score: ' + str(score)
-    score_text = font.render(score_msg, True, WHITE)
-    screen.blit(score_text, (10, 10))
-    speed_msg = 'Speed: ' + str(speed)
-    speed_text = small_font.render(speed_msg, True, WHITE)
-    screen.blit(speed_text, (10, 50))
-    length_msg = 'Length: ' + str(len(snake))
-    length_text = small_font.render(length_msg, True, WHITE)
-    screen.blit(length_text, (10, 80))
-    if game_over:
-        game_over_text = font.render('GAME OVER!', True, RED)
-        restart_text = small_font.render('Press SPACE to restart', True, WHITE)
-        screen.blit(
-            game_over_text,
-            (WIDTH // 2 - game_over_text.get_width() // 2, HEIGHT // 2 - 30),
+        dx, dy = self.direction
+
+        new_head = (
+            (head[0] + dx * GRID_SIZE) % SCREEN_WIDTH,
+            (head[1] + dy * GRID_SIZE) % SCREEN_HEIGHT
         )
-        screen.blit(
-            restart_text,
-            (WIDTH // 2 - restart_text.get_width() // 2, HEIGHT // 2 + 10),
-        )
-    controls_text = small_font.render(
-        'Controls: ARROWS or WASD', True, (200, 200, 200)
-    )
-    screen.blit(controls_text, (WIDTH - controls_text.get_width() - 10, 10))
-    pygame.display.flip()
+
+        if new_head in self.positions:
+            self.reset()
+        else:
+            self.positions.insert(0, new_head)
+            if len(self.positions) > self.length:
+                self.last = self.positions.pop()
+
+    def draw(self):
+        """Это докстриг"""
+        for position in self.positions[:-1]:
+            rect = (pygame.Rect(position, (GRID_SIZE, GRID_SIZE)))
+            pygame.draw.rect(screen, self.body_color, rect)
+            pygame.draw.rect(screen, BORDER_COLOR, rect, 1)
+
+        # Отрисовка головы змейки
+        head_rect = pygame.Rect(self.positions[0], (GRID_SIZE, GRID_SIZE))
+        pygame.draw.rect(screen, self.body_color, head_rect)
+        pygame.draw.rect(screen, BORDER_COLOR, head_rect, 1)
+
+        # Затирание последнего сегмента
+        if self.last:
+            last_rect = pygame.Rect(self.last, (GRID_SIZE, GRID_SIZE))
+            pygame.draw.rect(screen, BOARD_BACKGROUND_COLOR, last_rect)
+
+    def get_head_position(self):
+        """Это докстриг"""
+        return self.positions[0]
+
+    def reset(self):
+        """Это докстриг"""
+        self.length = 1
+        self.positions = [(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)]
+        self.direction = RIGHT
+        self.next_direction = None
+        screen.fill(BOARD_BACKGROUND_COLOR)
 
 
-# Генерация первой еды
-food = generate_food()
-
-# Основной игровой цикл
-while True:
+def handle_keys(game_object):
+    """Это докстриг"""
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
-            sys.exit()
-        if event.type == pygame.KEYDOWN:
-            result = handle_keydown(event, game_over)
-            snake, direction, score, food, speed, game_over = result
-    snake, game_over = move_snake(snake, direction, game_over)
-    if not game_over and snake[0] == food:
-        score += 10
-        food = generate_food()
-        speed = min(30, speed + 1)
-    elif not game_over and len(snake) > 1:
-        snake.pop()
-    draw_game()
-    clock.tick(speed)
+            raise SystemExit
+        elif event.type == pygame.KEYDOWN:
+            if event.key == pygame.K_UP and game_object.direction != DOWN:
+                game_object.next_direction = UP
+            elif event.key == pygame.K_DOWN and game_object.direction != UP:
+                game_object.next_direction = DOWN
+            elif event.key == pygame.K_LEFT and game_object.direction != RIGHT:
+                game_object.next_direction = LEFT
+            elif event.key == pygame.K_RIGHT and game_object.direction != LEFT:
+                game_object.next_direction = RIGHT
+
+
+def main():
+    """Это докстриг"""
+    # Инициализация PyGame:
+    pygame.init()
+    # Тут нужно создать экземпляры классов.
+    snake = Snake()
+    apple = Apple()
+
+    while True:
+        clock.tick(SPEED)
+
+        # Тут опишите основную логику игры.
+        snake.draw()
+        apple.draw()
+
+        handle_keys(snake)
+        snake.update_direction()
+        snake.move()
+
+        if snake.get_head_position() == apple.position:
+            snake.length += 1
+            while apple.position in snake.positions:
+                apple.randomize_position()
+            print(apple.position)
+
+        pygame.display.update()
+
+
+if __name__ == '__main__':
+    main()
+# Проверить, установлен ли pygame
+python -c "import pygame"
+
+# Если ошибка - установить
+pip install pygame
+
+# Запустить игру
+python the_snake.py

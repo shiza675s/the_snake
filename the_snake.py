@@ -2,6 +2,7 @@ from random import randint
 
 import pygame
 
+
 # Константы для размеров поля и сетки:
 SCREEN_WIDTH, SCREEN_HEIGHT = 640, 480
 GRID_SIZE = 20
@@ -39,80 +40,75 @@ pygame.display.set_caption('Змейка')
 clock = pygame.time.Clock()
 
 
-# Тут опишите все классы игры.
 class GameObject:
-    """Это докстриг"""
+    """Базовый класс для игровых объектов."""
 
-    def __init__(self, body_color: tuple = (255, 0, 0),
-                 position: tuple = ((SCREEN_WIDTH // 2), (SCREEN_HEIGHT // 2))
-                 ):
+    def __init__(self, body_color=None, position=None):
+        if body_color is None:
+            body_color = (255, 0, 0)
+        if position is None:
+            position = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
         self.position = position
         self.body_color = body_color
 
     def draw(self):
-        """Это докстриг"""
+        """Абстрактный метод отрисовки."""
         pass
 
 
 class Apple(GameObject):
-    """Это докстриг"""
+    """Класс для яблока."""
 
-    def __init__(self, body_color=(255, 0, 0),
-                 position=((SCREEN_WIDTH // 2), (SCREEN_HEIGHT // 2))):
-        super().__init__(body_color=(255, 0, 0),
-                         position=((SCREEN_WIDTH // 2), (SCREEN_HEIGHT // 2)))
-        self.body_color = (255, 0, 0)
+    def __init__(self, body_color=None, position=None):
+        if body_color is None:
+            body_color = APPLE_COLOR
+        super().__init__(body_color=body_color, position=position)
         self.position = self.randomize_position()
 
     def randomize_position(self):
-        """Это докстриг"""
+        """Генерация случайной позиции."""
         x = randint(0, GRID_WIDTH - 1) * GRID_SIZE
         y = randint(0, GRID_HEIGHT - 1) * GRID_SIZE
         position = (x, y)
-
         self.position = position
-
         return position
 
-    # Метод draw класса Apple
     def draw(self):
-        """Это докстриг"""
+        """Отрисовка яблока."""
         rect = pygame.Rect(self.position, (GRID_SIZE, GRID_SIZE))
         pygame.draw.rect(screen, self.body_color, rect)
         pygame.draw.rect(screen, BORDER_COLOR, rect, 1)
 
 
 class Snake(GameObject):
-    """Это докстриг"""
+    """Класс для змейки."""
 
-    def __init__(self, position=(0, 0), length: int = 1,
-                 positions: list[tuple] = [(0, 0)],
-                 direction: tuple = RIGHT, next_direction: tuple = None,
-                 body_color=(0, 255, 0)):
-        super().__init__(body_color, position)
-        self.length = length
-        self.positions = positions
-        self.direction = direction
-        self.next_direction = next_direction
+    def __init__(self, body_color=None, position=None):
+        if body_color is None:
+            body_color = SNAKE_COLOR
+        if position is None:
+            position = (SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)
+        super().__init__(body_color=body_color, position=position)
+        self.length = 1
+        self.positions = [position]
+        self.direction = RIGHT
+        self.next_direction = None
         self.last = self.positions[-1]
 
     def update_direction(self):
-        """Это докстриг"""
+        """Обновление направления движения."""
         if self.next_direction:
             self.direction = self.next_direction
             self.next_direction = None
 
     def move(self):
-        """Это докстриг"""
+        """Движение змейки."""
         head = self.get_head_position()
-
         dx, dy = self.direction
-
         new_head = (
             (head[0] + dx * GRID_SIZE) % SCREEN_WIDTH,
             (head[1] + dy * GRID_SIZE) % SCREEN_HEIGHT
         )
-
         if new_head in self.positions:
             self.reset()
         else:
@@ -121,9 +117,9 @@ class Snake(GameObject):
                 self.last = self.positions.pop()
 
     def draw(self):
-        """Это докстриг"""
+        """Отрисовка змейки."""
         for position in self.positions[:-1]:
-            rect = (pygame.Rect(position, (GRID_SIZE, GRID_SIZE)))
+            rect = pygame.Rect(position, (GRID_SIZE, GRID_SIZE))
             pygame.draw.rect(screen, self.body_color, rect)
             pygame.draw.rect(screen, BORDER_COLOR, rect, 1)
 
@@ -138,11 +134,11 @@ class Snake(GameObject):
             pygame.draw.rect(screen, BOARD_BACKGROUND_COLOR, last_rect)
 
     def get_head_position(self):
-        """Это докстриг"""
+        """Получение позиции головы."""
         return self.positions[0]
 
     def reset(self):
-        """Это докстриг"""
+        """Сброс состояния змейки."""
         self.length = 1
         self.positions = [(SCREEN_WIDTH // 2, SCREEN_HEIGHT // 2)]
         self.direction = RIGHT
@@ -151,7 +147,7 @@ class Snake(GameObject):
 
 
 def handle_keys(game_object):
-    """Это докстриг"""
+    """Обработка нажатий клавиш."""
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
             pygame.quit()
@@ -168,19 +164,14 @@ def handle_keys(game_object):
 
 
 def main():
-    """Это докстриг"""
-    # Инициализация PyGame:
+    """Основная функция игры."""
     pygame.init()
-    # Тут нужно создать экземпляры классов.
     snake = Snake()
     apple = Apple()
 
     while True:
         clock.tick(SPEED)
-
-        # Тут опишите основную логику игры.
-        snake.draw()
-        apple.draw()
+        screen.fill(BOARD_BACKGROUND_COLOR)
 
         handle_keys(snake)
         snake.update_direction()
@@ -190,8 +181,9 @@ def main():
             snake.length += 1
             while apple.position in snake.positions:
                 apple.randomize_position()
-            print(apple.position)
 
+        snake.draw()
+        apple.draw()
         pygame.display.update()
 
 

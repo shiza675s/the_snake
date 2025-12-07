@@ -1,7 +1,6 @@
 """Snake Game - классическая игра змейка."""
 import random
 import sys
-
 import pygame
 
 
@@ -46,77 +45,84 @@ def generate_food():
             return x, y
 
 
-food = generate_food()
+def handle_keydown(event, game_over):
+    """Обработка нажатий клавиш."""
+    if game_over:
+        if event.key == pygame.K_SPACE:
+            # Рестарт игры
+            snake = [(WIDTH // 2, HEIGHT // 2)]
+            direction = 'RIGHT'
+            score = 0
+            food = generate_food()
+            speed = 10
+            return snake, direction, score, food, speed, False
+        return snake, direction, score, food, speed, game_over
+    else:
+        # Обработка управления
+        if event.key == pygame.K_LEFT and direction != 'RIGHT':
+            direction = 'LEFT'
+        elif event.key == pygame.K_RIGHT and direction != 'LEFT':
+            direction = 'RIGHT'
+        elif event.key == pygame.K_UP and direction != 'DOWN':
+            direction = 'UP'
+        elif event.key == pygame.K_DOWN and direction != 'UP':
+            direction = 'DOWN'
+        elif event.key == pygame.K_a and direction != 'RIGHT':
+            direction = 'LEFT'
+        elif event.key == pygame.K_d and direction != 'LEFT':
+            direction = 'RIGHT'
+        elif event.key == pygame.K_w and direction != 'DOWN':
+            direction = 'UP'
+        elif event.key == pygame.K_s and direction != 'UP':
+            direction = 'DOWN'
+    
+    return snake, direction, score, food, speed, game_over
 
-# Основной игровой цикл
-while True:
-    for event in pygame.event.get():
-        if event.type == pygame.QUIT:
-            pygame.quit()
-            sys.exit()
 
-        if event.type == pygame.KEYDOWN:
-            if game_over:
-                if event.key == pygame.K_SPACE:
-                    # Рестарт игры
-                    snake = [(WIDTH // 2, HEIGHT // 2)]
-                    direction = 'RIGHT'
-                    score = 0
-                    game_over = False
-                    food = generate_food()
-                    speed = 10
-            else:
-                if event.key == pygame.K_LEFT and direction != 'RIGHT':
-                    direction = 'LEFT'
-                elif event.key == pygame.K_RIGHT and direction != 'LEFT':
-                    direction = 'RIGHT'
-                elif event.key == pygame.K_UP and direction != 'DOWN':
-                    direction = 'UP'
-                elif event.key == pygame.K_DOWN and direction != 'UP':
-                    direction = 'DOWN'
-                elif event.key == pygame.K_a and direction != 'RIGHT':
-                    direction = 'LEFT'
-                elif event.key == pygame.K_d and direction != 'LEFT':
-                    direction = 'RIGHT'
-                elif event.key == pygame.K_w and direction != 'DOWN':
-                    direction = 'UP'
-                elif event.key == pygame.K_s and direction != 'UP':
-                    direction = 'DOWN'
+def move_snake(snake, direction, game_over):
+    """Движение змейки."""
+    if game_over:
+        return snake, game_over
+    
+    head_x, head_y = snake[0]
+
+    if direction == 'LEFT':
+        head_x -= BLOCK_SIZE
+    elif direction == 'RIGHT':
+        head_x += BLOCK_SIZE
+    elif direction == 'UP':
+        head_y -= BLOCK_SIZE
+    elif direction == 'DOWN':
+        head_y += BLOCK_SIZE
+
+    new_head = (head_x, head_y)
+
+    # Проверка столкновения со стенами
+    if (head_x < 0
+            or head_x >= WIDTH
+            or head_y < 0
+            or head_y >= HEIGHT
+            or new_head in snake):
+        game_over = True
 
     if not game_over:
-        # Движение змейки
-        head_x, head_y = snake[0]
+        snake.insert(0, new_head)
 
-        if direction == 'LEFT':
-            head_x -= BLOCK_SIZE
-        elif direction == 'RIGHT':
-            head_x += BLOCK_SIZE
-        elif direction == 'UP':
-            head_y -= BLOCK_SIZE
-        elif direction == 'DOWN':
-            head_y += BLOCK_SIZE
+    return snake, game_over
 
-        new_head = (head_x, head_y)
 
-        # Проверка столкновения со стенами
-        if (head_x < 0
-                or head_x >= WIDTH
-                or head_y < 0
-                or head_y >= HEIGHT
-                or new_head in snake):
-            game_over = True
+def check_food_collision(snake, food, score, speed):
+    """Проверка столкновения с едой."""
+    if not game_over and snake[0] == food:
+        score += 10
+        food = generate_food()
+        speed = min(30, speed + 1)  # Постепенное увеличение скорости
+        return food, score, speed
+    return food, score, speed
 
-        if not game_over:
-            snake.insert(0, new_head)
 
-            # Проверка съедания еды
-            if new_head == food:
-                score += 10
-                food = generate_food()
-                speed = min(30, speed + 1)  # Постепенное увеличение скорости
-            else:
-                snake.pop()
-
+def draw_game():
+    """Отрисовка всех элементов игры."""
     # Отрисовка
     screen.fill(BLACK)
 
@@ -174,4 +180,36 @@ while True:
     screen.blit(controls_text, (WIDTH - controls_text.get_width() - 10, 10))
 
     pygame.display.flip()
+
+
+# Генерация первой еды
+food = generate_food()
+
+# Основной игровой цикл
+while True:
+    for event in pygame.event.get():
+        if event.type == pygame.QUIT:
+            pygame.quit()
+            sys.exit()
+
+        if event.type == pygame.KEYDOWN:
+            result = handle_keydown(event, game_over)
+            snake, direction, score, food, speed, game_over = result
+            # Если была рестарт
+            if len(result) > 6:
+                snake, direction, score, food, speed, game_over, _ = result
+
+    # Движение змейки
+    snake, game_over = move_snake(snake, direction, game_over)
+    
+    # Проверка съедания еды
+    if not game_over and snake[0] == food:
+        score += 10
+        food = generate_food()
+        speed = min(30, speed + 1)
+    elif not game_over and len(snake) > 1:
+        snake.pop()
+
+    # Отрисовка
+    draw_game()
     clock.tick(speed)

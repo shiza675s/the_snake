@@ -1,6 +1,7 @@
 """Snake Game - классическая игра змейка."""
 import random
 import sys
+
 import pygame
 
 
@@ -45,54 +46,57 @@ def generate_food():
             return x, y
 
 
-def handle_keydown(event, game_over):
+def handle_direction_key(event_key, current_direction):
+    """Обработка клавиш направления."""
+    key_mappings = {
+        pygame.K_LEFT: ('LEFT', 'RIGHT'),
+        pygame.K_RIGHT: ('RIGHT', 'LEFT'),
+        pygame.K_UP: ('UP', 'DOWN'),
+        pygame.K_DOWN: ('DOWN', 'UP'),
+        pygame.K_a: ('LEFT', 'RIGHT'),
+        pygame.K_d: ('RIGHT', 'LEFT'),
+        pygame.K_w: ('UP', 'DOWN'),
+        pygame.K_s: ('DOWN', 'UP'),
+    }
+    
+    if event_key in key_mappings:
+        new_dir, opposite_dir = key_mappings[event_key]
+        if current_direction != opposite_dir:
+            return new_dir
+    return current_direction
+
+
+def handle_keydown(event, current_game_over):
     """Обработка нажатий клавиш."""
-    if game_over:
+    if current_game_over:
         if event.key == pygame.K_SPACE:
             # Рестарт игры
-            snake = [(WIDTH // 2, HEIGHT // 2)]
-            direction = 'RIGHT'
-            score = 0
-            food = generate_food()
-            speed = 10
-            return snake, direction, score, food, speed, False
-        return snake, direction, score, food, speed, game_over
-    else:
-        # Обработка управления
-        if event.key == pygame.K_LEFT and direction != 'RIGHT':
-            direction = 'LEFT'
-        elif event.key == pygame.K_RIGHT and direction != 'LEFT':
-            direction = 'RIGHT'
-        elif event.key == pygame.K_UP and direction != 'DOWN':
-            direction = 'UP'
-        elif event.key == pygame.K_DOWN and direction != 'UP':
-            direction = 'DOWN'
-        elif event.key == pygame.K_a and direction != 'RIGHT':
-            direction = 'LEFT'
-        elif event.key == pygame.K_d and direction != 'LEFT':
-            direction = 'RIGHT'
-        elif event.key == pygame.K_w and direction != 'DOWN':
-            direction = 'UP'
-        elif event.key == pygame.K_s and direction != 'UP':
-            direction = 'DOWN'
+            new_snake = [(WIDTH // 2, HEIGHT // 2)]
+            new_direction = 'RIGHT'
+            new_score = 0
+            new_food = generate_food()
+            new_speed = 10
+            return new_snake, new_direction, new_score, new_food, new_speed, False
+        return snake, direction, score, food, speed, current_game_over
     
-    return snake, direction, score, food, speed, game_over
+    new_direction = handle_direction_key(event.key, direction)
+    return snake, new_direction, score, food, speed, current_game_over
 
 
-def move_snake(snake, direction, game_over):
+def move_snake(current_snake, current_direction, current_game_over):
     """Движение змейки."""
-    if game_over:
-        return snake, game_over
+    if current_game_over:
+        return current_snake, current_game_over
     
-    head_x, head_y = snake[0]
+    head_x, head_y = current_snake[0]
 
-    if direction == 'LEFT':
+    if current_direction == 'LEFT':
         head_x -= BLOCK_SIZE
-    elif direction == 'RIGHT':
+    elif current_direction == 'RIGHT':
         head_x += BLOCK_SIZE
-    elif direction == 'UP':
+    elif current_direction == 'UP':
         head_y -= BLOCK_SIZE
-    elif direction == 'DOWN':
+    elif current_direction == 'DOWN':
         head_y += BLOCK_SIZE
 
     new_head = (head_x, head_y)
@@ -102,31 +106,20 @@ def move_snake(snake, direction, game_over):
             or head_x >= WIDTH
             or head_y < 0
             or head_y >= HEIGHT
-            or new_head in snake):
-        game_over = True
+            or new_head in current_snake):
+        current_game_over = True
 
-    if not game_over:
-        snake.insert(0, new_head)
+    if not current_game_over:
+        current_snake.insert(0, new_head)
 
-    return snake, game_over
-
-
-def check_food_collision(snake, food, score, speed):
-    """Проверка столкновения с едой."""
-    if not game_over and snake[0] == food:
-        score += 10
-        food = generate_food()
-        speed = min(30, speed + 1)  # Постепенное увеличение скорости
-        return food, score, speed
-    return food, score, speed
+    return current_snake, current_game_over
 
 
 def draw_game():
     """Отрисовка всех элементов игры."""
-    # Отрисовка
     screen.fill(BLACK)
 
-    # Рисуем сетку (опционально)
+    # Рисуем сетку
     for x in range(0, WIDTH, BLOCK_SIZE):
         pygame.draw.line(screen, (40, 40, 40), (x, 0), (x, HEIGHT))
     for y in range(0, HEIGHT, BLOCK_SIZE):
@@ -134,7 +127,7 @@ def draw_game():
 
     # Рисуем змейку
     for i, (x, y) in enumerate(snake):
-        color = GREEN if i == 0 else BLUE  # Голова зеленая, тело синее
+        color = GREEN if i == 0 else BLUE
         pygame.draw.rect(screen, color, (x, y, BLOCK_SIZE, BLOCK_SIZE))
         pygame.draw.rect(screen, WHITE, (x, y, BLOCK_SIZE, BLOCK_SIZE), 1)
 
@@ -148,15 +141,18 @@ def draw_game():
     )
 
     # Отображаем счет
-    score_text = font.render(f'Score: {score}', True, WHITE)
+    score_msg = 'Score: ' + str(score)
+    score_text = font.render(score_msg, True, WHITE)
     screen.blit(score_text, (10, 10))
 
     # Отображаем скорость
-    speed_text = small_font.render(f'Speed: {speed}', True, WHITE)
+    speed_msg = 'Speed: ' + str(speed)
+    speed_text = small_font.render(speed_msg, True, WHITE)
     screen.blit(speed_text, (10, 50))
 
     # Отображаем длину змейки
-    length_text = small_font.render(f'Length: {len(snake)}', True, WHITE)
+    length_msg = 'Length: ' + str(len(snake))
+    length_text = small_font.render(length_msg, True, WHITE)
     screen.blit(length_text, (10, 80))
 
     # Сообщение Game Over
@@ -195,13 +191,10 @@ while True:
         if event.type == pygame.KEYDOWN:
             result = handle_keydown(event, game_over)
             snake, direction, score, food, speed, game_over = result
-            # Если была рестарт
-            if len(result) > 6:
-                snake, direction, score, food, speed, game_over, _ = result
 
     # Движение змейки
     snake, game_over = move_snake(snake, direction, game_over)
-    
+
     # Проверка съедания еды
     if not game_over and snake[0] == food:
         score += 10

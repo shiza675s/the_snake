@@ -1,6 +1,5 @@
 import random
 import sys
-
 import pygame
 
 
@@ -121,11 +120,11 @@ while True:
         (food[0] + BLOCK_SIZE // 2, food[1] + BLOCK_SIZE // 2),
         BLOCK_SIZE // 2,
     )
-    score_text = font.render(f'Score: {score}', True, WHITE)
+    score_text = font.render('Score: ' + str(score), True, WHITE)
     screen.blit(score_text, (10, 10))
-    speed_text = small_font.render(f'Speed: {speed}', True, WHITE)
+    speed_text = small_font.render('Speed: ' + str(speed), True, WHITE)
     screen.blit(speed_text, (10, 50))
-    length_text = small_font.render(f'Length: {len(snake)}', True, WHITE)
+    length_text = small_font.render('Length: ' + str(len(snake)), True, WHITE)
     screen.blit(length_text, (10, 80))
     if game_over:
         game_over_text = font.render('GAME OVER!', True, RED)

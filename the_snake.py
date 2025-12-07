@@ -22,6 +22,7 @@ screen = pygame.display.set_mode((SCREEN_WIDTH, SCREEN_HEIGHT), 0, 32)
 pygame.display.set_caption("Змейка")
 clock = pygame.time.Clock()
 
+
 class GameObject:
     """Базовый объект."""
 
@@ -31,6 +32,7 @@ class GameObject:
 
     def draw(self):
         pass
+
 
 class Apple(GameObject):
     """Яблоко."""
@@ -50,6 +52,7 @@ class Apple(GameObject):
         pygame.draw.rect(screen, self.body_color, rect)
         pygame.draw.rect(screen, BORDER_COLOR, rect, 1)
 
+
 class Snake(GameObject):
     """Змейка."""
 
@@ -58,7 +61,7 @@ class Snake(GameObject):
         super().__init__(SNAKE_COLOR, start)
 
         self.length = 1
-        self.positions = [start]   # ← исправлено
+        self.positions = [start]
         self.direction = RIGHT
         self.next_direction = None
         self.last = None
@@ -109,6 +112,7 @@ class Snake(GameObject):
         self.next_direction = None
         screen.fill(BOARD_BACKGROUND_COLOR)
 
+
 def handle_keys(game_object):
     for event in pygame.event.get():
         if event.type == pygame.QUIT:
@@ -124,6 +128,7 @@ def handle_keys(game_object):
                 game_object.next_direction = LEFT
             elif event.key == pygame.K_RIGHT and game_object.direction != LEFT:
                 game_object.next_direction = RIGHT
+
 
 def main():
     pygame.init()
@@ -143,11 +148,9 @@ def main():
                 apple.randomize_position()
 
         screen.fill(BOARD_BACKGROUND_COLOR)
-
-
         snake.draw()
         apple.draw()
         pygame.display.update()
 
 if __name__ == "__main__":
-    main() snake
+    main()

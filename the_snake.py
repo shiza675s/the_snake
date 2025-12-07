@@ -133,9 +133,6 @@ def main():
     while True:
         clock.tick(SPEED)
 
-        snake.draw()
-        apple.draw()
-
         handle_keys(snake)
         snake.update_direction()
         snake.move()
@@ -144,7 +141,13 @@ def main():
             snake.length += 1
             while apple.position in snake.positions:
                 apple.randomize_position()
-                .display.update()
+
+        screen.fill(BOARD_BACKGROUND_COLOR)
+
+
+        snake.draw()
+        apple.draw()
+        pygame.display.update()
 
 if __name__ == "__main__":
-    main() pygame
+    main() snake
